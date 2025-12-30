@@ -816,6 +816,40 @@ body {
 }
 
 /* Voice Search & Search Enhancements */
+.search-container {
+  display: flex;
+  align-items: center;
+  background: var(--bg-color);
+  padding: 4px 10px;
+  border-radius: 30px;
+  border: 1px solid var(--border-color);
+  width: 450px;
+  transition: all 0.3s;
+}
+
+.search-container:focus-within {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 15px rgba(30, 58, 138, 0.1);
+}
+
+.search-confirm-btn {
+  background: var(--primary-color);
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.search-confirm-btn:hover {
+  transform: scale(1.1);
+  background: var(--primary-hover);
+}
+
 .mic-btn {
   font-size: 1.2rem;
   margin-right: 10px;
@@ -823,6 +857,8 @@ body {
   border: none;
   cursor: pointer;
   transition: transform 0.2s;
+  display: flex;
+  align-items: center;
 }
 
 .mic-btn:hover {
@@ -832,6 +868,22 @@ body {
 .mic-btn.listening {
   color: #ef4444;
   animation: pulse 1.5s infinite;
+}
+
+.ai-fab-branded {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  z-index: 1000;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.3));
+}
+
+.ai-fab-branded:hover {
+  transform: scale(1.15) rotate(5deg);
 }
 
 @keyframes pulse {
@@ -1234,53 +1286,13 @@ body {
   }
 
   .search-container {
-    display: flex;
-    align-items: center;
-    background: var(--bg-color);
-    padding: 4px 10px;
-    border-radius: 30px;
-    border: 1px solid var(--border-color);
-    width: 450px;
-    transition: all 0.3s;
-  }
-
-  .search-container:focus-within {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 15px rgba(30, 58, 138, 0.1);
-  }
-
-  .search-confirm-btn {
-    background: var(--primary-color);
-    border: none;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: transform 0.2s;
-  }
-
-  .search-confirm-btn:hover {
-    transform: scale(1.1);
-    background: var(--primary-hover);
+    width: 100%;
+    margin: 0 10px;
   }
 
   .ai-fab-branded {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    z-index: 1000;
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.3));
-  }
-
-  .ai-fab-branded:hover {
-    transform: scale(1.15) rotate(5deg);
+    bottom: 20px;
+    right: 20px;
   }
 
   .card-grid {
