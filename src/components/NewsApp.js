@@ -18,6 +18,8 @@ const NewsApp = () => {
   const [showSidebar, setShowSidebar] = useState(false);
   const [showAiWidget, setShowAiWidget] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  // Settings modal state
+  const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState({
     aiTone: 'Professional',
     newsRegion: 'Global',
