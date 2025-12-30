@@ -1,24 +1,44 @@
 import React, { useState, useEffect } from 'react';
+import { extractFullContent } from '../utils/scraper';
 
 const NewsDetail = ({ article, onBack }) => {
-    const [showIframe, setShowIframe] = useState(false);
     const [isReading, setIsReading] = useState(false);
     const [translatedContent, setTranslatedContent] = useState(null);
     const [translating, setTranslating] = useState(false);
-    const [targetLang, setTargetLang] = useState('hi'); // Default Hindi
+    const [targetLang, setTargetLang] = useState('hi');
+    const [fullContent, setFullContent] = useState(null);
+    const [loadingContent, setLoadingContent] = useState(false);
 
-    // Stop speech on unmount
+    // Fetch full content on mount
     useEffect(() => {
+        const getFullText = async () => {
+            setLoadingContent(true);
+            const content = await extractFullContent(article.url);
+            setFullContent(content);
+            setLoadingContent(false);
+        };
+        getFullText();
+
         return () => window.speechSynthesis.cancel();
-    }, []);
+    }, [article.url]);
 
     const handleListen = () => {
         if (isReading) {
             window.speechSynthesis.cancel();
             setIsReading(false);
         } else {
-            const textToRead = `${article.title}. ${article.description}. ${article.content || ''}`;
+            const textToRead = translatedContent || fullContent || `${article.title}. ${article.description}`;
             const utterance = new SpeechSynthesisUtterance(textToRead);
+
+            // Voice improvement: Try to find a high-quality voice
+            const voices = window.speechSynthesis.getVoices();
+            // Favor 'Google' or 'Premium' sounding voices
+            const premiumVoice = voices.find(v => v.name.includes('Google') || v.name.includes('Natural')) || voices[0];
+            if (premiumVoice) utterance.voice = premiumVoice;
+
+            utterance.rate = 1.0; // Normal speed
+            utterance.pitch = 1.0;
+
             utterance.onend = () => setIsReading(false);
             window.speechSynthesis.speak(utterance);
             setIsReading(true);
@@ -26,20 +46,28 @@ const NewsDetail = ({ article, onBack }) => {
     };
 
     const handleTranslate = async () => {
+        if (targetLang === 'en') {
+            setTranslatedContent(null); // English is the original
+            return;
+        }
+
         setTranslating(true);
         try {
-            const text = `${article.title}\n\n${article.description}\n\n${article.content || ''}`;
-            // Using a public Lingva instance (free libre translation mirror)
-            const response = await fetch(`https://lingva.ml/api/v1/en/${targetLang}/${encodeURIComponent(text)}`);
-            const data = await response.json();
+            const textToTranslate = fullContent || `${article.title}\n\n${article.description}`;
+            // AllOrigins to fetch translation from Lingva (avoiding CORS)
+            const apiUrl = `https://lingva.ml/api/v1/en/${targetLang}/${encodeURIComponent(textToTranslate.slice(0, 5000))}`;
+            const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(apiUrl)}`);
+            const proxyData = await response.json();
+            const data = JSON.parse(proxyData.contents);
+
             if (data.translation) {
                 setTranslatedContent(data.translation);
             } else {
-                alert("Translation failed. Try again later.");
+                throw new Error("Invalid response");
             }
         } catch (err) {
             console.error("Translation error:", err);
-            alert("Translation unavailable right now.");
+            alert("Translation failed. Try another language or try again later.");
         } finally {
             setTranslating(false);
         }
@@ -52,28 +80,29 @@ const NewsDetail = ({ article, onBack }) => {
     };
 
     return (
-        <div className="news-detail-container">
+        <div className="news-detail-container fade-in">
             <div className="detail-nav">
-                <button onClick={onBack} className="back-btn">← Back</button>
+                <button onClick={onBack} className="back-btn">← Back to Feed</button>
                 <div className="detail-actions">
                     <select value={targetLang} onChange={(e) => setTargetLang(e.target.value)} className="lang-select">
-                        <option value="hi">Hindi</option>
+                        <option value="en">English (Default)</option>
+                        <option value="hi">Hindi (हिन्दी)</option>
                         <option value="es">Spanish</option>
                         <option value="fr">French</option>
                         <option value="de">German</option>
                         <option value="ja">Japanese</option>
                     </select>
                     <button onClick={handleTranslate} className="action-btn-icon" title="Translate" disabled={translating}>
-                        {translating ? '⏳' : '🌐'}
+                        {translating ? '⏳' : '🌐 Translate'}
                     </button>
                     <button onClick={handleListen} className={`action-btn-icon ${isReading ? 'active' : ''}`} title="Listen">
                         {isReading ? '🛑 Stop' : '🔊 Listen'}
                     </button>
-                    <button onClick={() => window.open(article.url, '_blank')} className="action-btn-text">Source ↗</button>
+                    <button onClick={() => window.open(article.url, '_blank')} className="action-btn-text">Open Original ↗</button>
                 </div>
             </div>
 
-            <div className="detail-content-full premium-reader">
+            <div className="detail-content-full premium-reader inline-article">
                 <div className="article-column-full">
                     <div className="article-hero enhanced">
                         <img
@@ -92,45 +121,29 @@ const NewsDetail = ({ article, onBack }) => {
                     </div>
 
                     <div className="detail-body-premium">
-                        {translatedContent ? (
+                        {loadingContent ? (
+                            <div className="loading-content-msg">
+                                <div className="spinner"></div>
+                                <p>Extracted full content for you...</p>
+                            </div>
+                        ) : translatedContent ? (
                             <div className="translated-box fade-in">
-                                <h3>Translation ({targetLang.toUpperCase()})</h3>
                                 <div className="content-text-main translated">{translatedContent}</div>
-                                <button className="secondary-btn" onClick={() => setTranslatedContent(null)}>Show Original</button>
+                                <button className="secondary-btn" onClick={() => setTranslatedContent(null)}>← Show Original</button>
                             </div>
                         ) : (
                             <>
                                 <p className="lead-text-premium">{article.description}</p>
                                 <div className="content-text-main">
-                                    {article.content?.split('[')[0]}
-                                    {/* Mock full content for demonstration if snippet is too short */}
-                                    {(!article.content || article.content.length < 200) && (
-                                        <p className="reader-hint">
-                                            The full article continues at the official source. YAT AI Aggregator has extracted the key highlights above to save you time.
-                                            You can use the 'Read Full Article' button below to stay on this page while browsing the original site.
-                                        </p>
-                                    )}
+                                    {fullContent || article.content || "Fetching full content..."}
                                 </div>
                             </>
                         )}
 
                         <div className="reader-separator"></div>
-
-                        {!showIframe ? (
-                            <div className="read-more-wrapper">
-                                <button onClick={() => setShowIframe(true)} className="primary-btn-premium">
-                                    Read Full Article (In-App View)
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="iframe-wrapper enhanced">
-                                <div className="iframe-header">
-                                    <span>YAT SafeView: {article.source?.name}</span>
-                                    <button onClick={() => setShowIframe(false)}>✕ Close</button>
-                                </div>
-                                <iframe src={article.url} title="News Source" className="news-iframe-large" />
-                            </div>
-                        )}
+                        <p className="footer-note">This content was extracted and optimized for YAT NewsAI.
+                            <a href={article.url} target="_blank" rel="noreferrer"> Read on original site</a>
+                        </p>
                     </div>
                 </div>
             </div>
