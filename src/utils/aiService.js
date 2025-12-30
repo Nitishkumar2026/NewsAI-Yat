@@ -3,9 +3,12 @@ const API_KEY = "sk-or-v1-f58ad4a47dff89da61092d6d818fddd90c4ab047099288f97c2037
 // List of free/stable models to rotate through if rate limited
 const MODELS = [
     "google/gemini-2.0-flash-exp:free",
+    "meta-llama/llama-3.1-8b-instruct:free",
     "mistralai/mistral-7b-instruct:free",
+    "qwen/qwen-2-7b-instruct:free",
     "google/gemma-2-9b-it:free",
-    "huggingfaceh4/zephyr-7b-beta:free"
+    "huggingfaceh4/zephyr-7b-beta:free",
+    "gryphe/mythomax-l2-13b:free"
 ];
 
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
