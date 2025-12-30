@@ -3,6 +3,7 @@ import Card from './Card';
 import NewsDetail from './NewsDetail';
 import GlobalAiAssistant from './GlobalAiAssistant';
 import { semanticRerank } from '../utils/aiService';
+import { SearchIcon, MicIcon, YatAiLogo } from './Icons';
 import './GlobalAiAssistant.css';
 
 const NewsApp = () => {
@@ -222,13 +223,17 @@ const NewsApp = () => {
           <div className='search-container'>
             <input
               type='text'
-              placeholder='Direct search or Voice search...'
+              placeholder='Search by Voice or Topic...'
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             />
-            <button onClick={startVoiceSearch} className={`mic-btn ${isListening ? 'listening' : ''}`} title="Voice Search">🎙️</button>
-            <button onClick={() => handleSearch()} title="Search">🔍</button>
+            <button onClick={startVoiceSearch} className={`mic-btn ${isListening ? 'listening' : ''}`} title="Voice Search">
+              <MicIcon color={isListening ? "#ef4444" : "var(--text-secondary)"} />
+            </button>
+            <button onClick={() => handleSearch()} className="search-confirm-btn" title="Search">
+              <SearchIcon color="white" />
+            </button>
           </div>
 
           <div className='top-actions'>
@@ -306,7 +311,7 @@ const NewsApp = () => {
         </div>
       )}
 
-      {!showAiWidget && <button className="ai-fab" onClick={() => setShowAiWidget(true)} title="Ask AI">🤖</button>}
+      {!showAiWidget && <button className="ai-fab-branded" onClick={() => setShowAiWidget(true)} title="Ask YAT AI"><YatAiLogo size={50} /></button>}
       {showAiWidget && <GlobalAiAssistant onClose={() => setShowAiWidget(false)} selectedArticle={selectedArticle} />}
     </div>
   );
