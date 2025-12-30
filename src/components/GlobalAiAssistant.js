@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { callDeepSeek } from '../utils/aiService';
+import { YatAiLogo } from './Icons';
 import './GlobalAiAssistant.css';
 
 const GlobalAiAssistant = ({ onClose, selectedArticle }) => {
     const [messages, setMessages] = useState([
-        { role: 'ai', text: "Hello! I'm your AI News Assistant. Ask me anything about current events or general topics." }
+        { role: 'ai', text: "Hello! I'm your YAT Assistant. I can help with news summaries, translations, or general questions. How can I help you today?" }
     ]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -86,7 +87,7 @@ const GlobalAiAssistant = ({ onClose, selectedArticle }) => {
         <div className="global-ai-widget fade-in-up">
             <div className="global-ai-header">
                 <div className="header-title">
-                    <span>🤖</span>
+                    <YatAiLogo size={30} />
                     <h3>YAT AI Assistant {selectedArticle ? ' (Article Mode)' : ''}</h3>
                 </div>
                 <button onClick={onClose} className="close-btn">×</button>
