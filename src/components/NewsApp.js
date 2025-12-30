@@ -18,11 +18,13 @@ const NewsApp = () => {
   const [showSidebar, setShowSidebar] = useState(false);
   const [showAiWidget, setShowAiWidget] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState({
     aiTone: 'Professional',
     newsRegion: 'Global',
-    autoRerank: true
+    autoRerank: true,
+    fontSize: 'medium',
+    appTheme: 'light',
+    appLanguage: 'en'
   });
 
   // API KEYS
@@ -40,6 +42,12 @@ const NewsApp = () => {
   const saveSettings = (newSettings) => {
     setSettings(newSettings);
     localStorage.setItem('yatSettings', JSON.stringify(newSettings));
+
+    // Apply theme immediately if changed
+    if (newSettings.appTheme !== theme) {
+      setTheme(newSettings.appTheme);
+      document.documentElement.setAttribute('data-theme', newSettings.appTheme);
+    }
   };
 
   const toggleBookmark = (article) => {
@@ -237,11 +245,7 @@ const NewsApp = () => {
           </div>
 
           <div className='top-actions'>
-            <button className='action-btn' onClick={() => {
-              const newTheme = theme === 'light' ? 'dark' : 'light';
-              setTheme(newTheme);
-              document.documentElement.setAttribute('data-theme', newTheme);
-            }}>{theme === 'light' ? '🌙' : '☀️'}</button>
+            <button className='action-btn' onClick={() => setShowSettings(true)}>⚙️</button>
             <button className='action-btn'>🔔</button>
           </div>
         </header>
@@ -259,7 +263,11 @@ const NewsApp = () => {
 
         <div className='content-area'>
           {selectedArticle ? (
-            <NewsDetail article={selectedArticle} onBack={() => setSelectedArticle(null)} />
+            <NewsDetail
+              article={selectedArticle}
+              onBack={() => setSelectedArticle(null)}
+              fontSize={settings.fontSize}
+            />
           ) : (
             <>
               <div className='content-header'>
@@ -285,28 +293,65 @@ const NewsApp = () => {
       {showSettings && (
         <div className="modal-overlay" onClick={() => setShowSettings(false)}>
           <div className="settings-modal" onClick={e => e.stopPropagation()}>
-            <h3>YAT Options</h3>
-            <div className="settings-group">
-              <label>AI Response Tone</label>
-              <select value={settings.aiTone} onChange={e => saveSettings({ ...settings, aiTone: e.target.value })}>
-                <option>Professional</option>
-                <option>Concise</option>
-                <option>Creative</option>
-              </select>
+            <div className="modal-header">
+              <h3>YAT Customization</h3>
+              <button className="close-x" onClick={() => setShowSettings(false)}>✕</button>
             </div>
-            <div className="settings-group">
-              <label>Region</label>
-              <select value={settings.newsRegion} onChange={e => saveSettings({ ...settings, newsRegion: e.target.value })}>
-                <option>Global</option>
-                <option>India</option>
-                <option>US</option>
-              </select>
+
+            <div className="settings-scroll-area">
+              <div className="settings-group">
+                <label>AI Response Tone</label>
+                <select value={settings.aiTone} onChange={e => saveSettings({ ...settings, aiTone: e.target.value })}>
+                  <option>Professional</option>
+                  <option>Concise</option>
+                  <option>Creative</option>
+                </select>
+              </div>
+
+              <div className="settings-group">
+                <label>News Region</label>
+                <select value={settings.newsRegion} onChange={e => saveSettings({ ...settings, newsRegion: e.target.value })}>
+                  <option>Global</option>
+                  <option>India</option>
+                  <option>US</option>
+                  <option>UK</option>
+                </select>
+              </div>
+
+              <div className="settings-group">
+                <label>Reader Font Size</label>
+                <div className="font-size-toggle">
+                  {['small', 'medium', 'large'].map(sz => (
+                    <button
+                      key={sz}
+                      className={settings.fontSize === sz ? 'active' : ''}
+                      onClick={() => saveSettings({ ...settings, fontSize: sz })}
+                    >
+                      {sz.charAt(0).toUpperCase() + sz.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="settings-group">
+                <label>Appearance</label>
+                <select value={settings.appTheme} onChange={e => saveSettings({ ...settings, appTheme: e.target.value })}>
+                  <option value="light">Light Mode ☀️</option>
+                  <option value="dark">Dark Mode 🌙</option>
+                </select>
+              </div>
+
+              <div className="settings-group checkbox">
+                <input
+                  type="checkbox"
+                  id="autoRerank"
+                  checked={settings.autoRerank}
+                  onChange={e => saveSettings({ ...settings, autoRerank: e.target.checked })}
+                />
+                <label htmlFor="autoRerank">Auto AI Reranking</label>
+              </div>
             </div>
-            <div className="settings-group checkbox">
-              <input type="checkbox" checked={settings.autoRerank} onChange={e => saveSettings({ ...settings, autoRerank: e.target.checked })} />
-              <label>Auto AI Reranking (Vector Search)</label>
-            </div>
-            <button className="primary-btn" onClick={() => setShowSettings(false)}>Save & Close</button>
+            <button className="primary-btn full-width" onClick={() => setShowSettings(false)}>Done</button>
           </div>
         </div>
       )}

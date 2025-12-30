@@ -233,3 +233,28 @@
         transform: translateY(0);
     }
 }
+
+/* Mobile Responsiveness for AI Widget */
+@media (max-width: 768px) {
+    .global-ai-widget {
+        width: 100vw;
+        height: 100vh;
+        bottom: 0;
+        right: 0;
+        border-radius: 0;
+        z-index: 3000;
+    }
+
+    .global-ai-header {
+        padding: 20px;
+    }
+
+    .message-bubble {
+        max-width: 90%;
+    }
+
+    .global-ai-input {
+        padding: 20px 10px;
+        padding-bottom: env(safe-area-inset-bottom, 20px);
+    }
+}

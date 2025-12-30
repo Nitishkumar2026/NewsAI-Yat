@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { extractFullContent } from '../utils/scraper';
 
-const NewsDetail = ({ article, onBack }) => {
+const NewsDetail = ({ article, onBack, fontSize = 'medium', appLanguage = 'en' }) => {
     const [isReading, setIsReading] = useState(false);
     const [translatedContent, setTranslatedContent] = useState(null);
     const [translating, setTranslating] = useState(false);
@@ -22,21 +22,56 @@ const NewsDetail = ({ article, onBack }) => {
         return () => window.speechSynthesis.cancel();
     }, [article.url]);
 
-    const handleListen = () => {
+    const [availableVoices, setAvailableVoices] = useState([]);
+    const [selectedVoice, setSelectedVoice] = useState(null);
+    const [speechRate, setSpeechRate] = useState(1.0);
+
+    // Load available voices
+    useEffect(() => {
+        const loadVoices = () => {
+            const voices = window.speechSynthesis.getVoices();
+            // Filter for high-quality voices (Google, Microsoft, Natural) depending on OS
+            const highQualityVoices = voices.filter(v =>
+                v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Premium')
+            );
+            setAvailableVoices(voices);
+            // Default to a high-quality English voice if available
+            const defaultVoice = highQualityVoices.find(v => v.lang.startsWith('en')) || voices.find(v => v.lang.startsWith('en'));
+            if (defaultVoice) setSelectedVoice(defaultVoice.name);
+        };
+
+        loadVoices();
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+    }, []);
+
+    // Handle Text Selection for Speech
+    useEffect(() => {
+        const handleSelection = () => {
+            const selection = window.getSelection().toString();
+            if (selection && selection.length > 5 && !isReading) {
+                // Optional: Show a small popup button near selection (simplified here for now)
+            }
+        };
+        document.addEventListener('mouseup', handleSelection);
+        return () => document.removeEventListener('mouseup', handleSelection);
+    }, [isReading]);
+
+    const handleListen = (textToRead = null) => {
         if (isReading) {
             window.speechSynthesis.cancel();
             setIsReading(false);
         } else {
-            const textToRead = translatedContent || fullContent || `${article.title}. ${article.description}`;
-            const utterance = new SpeechSynthesisUtterance(textToRead);
+            // Priority: Selected text -> Translated text -> Full article
+            const selection = window.getSelection().toString();
+            const content = textToRead || selection || translatedContent || fullContent || `${article.title}. ${article.description}`;
 
-            // Voice improvement: Try to find a high-quality voice
-            const voices = window.speechSynthesis.getVoices();
-            // Favor 'Google' or 'Premium' sounding voices
-            const premiumVoice = voices.find(v => v.name.includes('Google') || v.name.includes('Natural')) || voices[0];
-            if (premiumVoice) utterance.voice = premiumVoice;
+            if (!content) return;
 
-            utterance.rate = 1.0; // Normal speed
+            const utterance = new SpeechSynthesisUtterance(content);
+            const voice = availableVoices.find(v => v.name === selectedVoice);
+            if (voice) utterance.voice = voice;
+
+            utterance.rate = speechRate;
             utterance.pitch = 1.0;
 
             utterance.onend = () => setIsReading(false);
@@ -80,10 +115,31 @@ const NewsDetail = ({ article, onBack }) => {
     };
 
     return (
-        <div className="news-detail-container fade-in">
+        <div className={`news-detail-container fade-in reader-font-${fontSize}`}>
             <div className="detail-nav">
                 <button onClick={onBack} className="back-btn">← Back to Feed</button>
                 <div className="detail-actions">
+                    <div className="audio-controls">
+                        {availableVoices.length > 0 && (
+                            <select
+                                className="voice-select"
+                                value={selectedVoice || ''}
+                                onChange={(e) => setSelectedVoice(e.target.value)}
+                                title="Select Voice"
+                            >
+                                {availableVoices.filter(v => v.lang.startsWith('en') || v.lang.startsWith('hi')).map(v => (
+                                    <option key={v.name} value={v.name}>{v.name.replace('Microsoft', '').replace('Google', '')}</option>
+                                ))}
+                            </select>
+                        )}
+                        <button onClick={() => setSpeechRate(r => r === 1.5 ? 0.8 : r + 0.1 > 1.5 ? 0.8 : r + 0.1)} className="speed-btn" title="Speed">
+                            {speechRate.toFixed(1)}x
+                        </button>
+                        <button onClick={() => handleListen()} className={`action-btn-icon ${isReading ? 'active' : ''}`} title="Listen (Select text to read specifically)">
+                            {isReading ? '🛑 Stop' : '🔊 Listen'}
+                        </button>
+                    </div>
+
                     <select value={targetLang} onChange={(e) => setTargetLang(e.target.value)} className="lang-select">
                         <option value="en">English (Default)</option>
                         <option value="hi">Hindi (हिन्दी)</option>
@@ -94,9 +150,6 @@ const NewsDetail = ({ article, onBack }) => {
                     </select>
                     <button onClick={handleTranslate} className="action-btn-icon" title="Translate" disabled={translating}>
                         {translating ? '⏳' : '🌐 Translate'}
-                    </button>
-                    <button onClick={handleListen} className={`action-btn-icon ${isReading ? 'active' : ''}`} title="Listen">
-                        {isReading ? '🛑 Stop' : '🔊 Listen'}
                     </button>
                     <button onClick={() => window.open(article.url, '_blank')} className="action-btn-text">Open Original ↗</button>
                 </div>
@@ -134,7 +187,7 @@ const NewsDetail = ({ article, onBack }) => {
                         ) : (
                             <>
                                 <p className="lead-text-premium">{article.description}</p>
-                                <div className="content-text-main">
+                                <div className="content-text-main reader-content">
                                     {fullContent || article.content || "Fetching full content..."}
                                 </div>
                             </>
