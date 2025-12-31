@@ -10,8 +10,8 @@
   --primary-hover: #1e40af;
   --accent-color: #0891b2;
   /* YAT Cyan */
-  --breaking-red: #0891b2;
-  /* Using Cyan for Ticker */
+  --breaking-red: #dc2626;
+  /* Red for Breaking */
   --border-color: #e2e8f0;
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 10px 15px -3px rgba(0, 30, 80, 0.1);
@@ -32,7 +32,7 @@
   --primary-color: #3b82f6;
   --primary-hover: #60a5fa;
   --accent-color: #22d3ee;
-  --breaking-red: #0891b2;
+  --breaking-red: #ef4444;
   --border-color: #334155;
   --glass-bg: rgba(15, 23, 42, 0.7);
   --glass-border: rgba(255, 255, 255, 0.1);
@@ -300,9 +300,8 @@ body {
 }
 
 /* Ticker */
-/* YAT Ticker */
 .news-ticker {
-  background: linear-gradient(90deg, #1e3a8a 0%, #0891b2 100%);
+  background: linear-gradient(90deg, var(--breaking-red) 0%, #b91c1c 100%);
   color: white;
   display: flex;
   align-items: center;
@@ -313,7 +312,7 @@ body {
 }
 
 .ticker-label {
-  background-color: #172554;
+  background-color: #7f1d1d;
   color: white;
   padding: 0 1.5rem;
   height: 100%;

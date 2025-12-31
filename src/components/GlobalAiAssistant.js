@@ -4,6 +4,16 @@ import { YatAiLogo } from './Icons';
 import './GlobalAiAssistant.css';
 
 const GlobalAiAssistant = ({ onClose, selectedArticle }) => {
+    useEffect(() => {
+        if (window.__YAT_AI_OPEN) {
+            if (onClose) onClose();
+            return;
+        }
+        window.__YAT_AI_OPEN = true;
+        return () => {
+            window.__YAT_AI_OPEN = false;
+        };
+    }, [onClose]);
     const [messages, setMessages] = useState([
         { role: 'ai', text: "Hello! I'm your YAT Assistant. I can help with news summaries, translations, or general questions. How can I help you today?" }
     ]);

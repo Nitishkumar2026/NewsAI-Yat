@@ -1,4 +1,6 @@
-const API_KEY = "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";
+const API_KEY =
+    (typeof process !== 'undefined' && process.env && process.env.REACT_APP_OPENROUTER_API_KEY) ||
+    (typeof window !== 'undefined' ? window.localStorage.getItem('OPENROUTER_API_KEY') : '');
 
 // List of free/stable models to rotate through if rate limited
 const MODELS = [
@@ -13,6 +15,17 @@ const MODELS = [
 
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+const fetchWithTimeout = async (url, options = {}, timeoutMs = 15000) => {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        const res = await fetch(url, { ...options, signal: controller.signal, mode: 'cors', credentials: 'omit' });
+        return res;
+    } finally {
+        clearTimeout(id);
+    }
+};
+
 const callAiWithFallback = async (prompt, systemContext, modelIndex = 0, retryCount = 0) => {
     if (modelIndex >= MODELS.length) {
         throw new Error("All AI models are currently unavailable or rate-limited.");
@@ -21,14 +34,16 @@ const callAiWithFallback = async (prompt, systemContext, modelIndex = 0, retryCo
     const currentModel = MODELS[modelIndex];
 
     try {
+        if (!API_KEY) {
+            throw new Error("Missing API key. Set REACT_APP_OPENROUTER_API_KEY or localStorage OPENROUTER_API_KEY.");
+        }
         console.log(`[AI] Attempting with model: ${currentModel} (Attempt ${retryCount + 1})`);
 
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        const response = await fetchWithTimeout('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${API_KEY}`,
-                'HTTP-Referer': 'http://localhost:3000',
                 'X-Title': 'NewsAI'
             },
             body: JSON.stringify({
@@ -118,5 +133,4 @@ export const semanticRerank = async (query, articles) => {
         return articles;
     }
 };
-
 

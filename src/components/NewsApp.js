@@ -1,10 +1,24 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Card from './Card';
 import NewsDetail from './NewsDetail';
 import GlobalAiAssistant from './GlobalAiAssistant';
 import { semanticRerank } from '../utils/aiService';
 import { SearchIcon, MicIcon, YatAiLogo } from './Icons';
 import './GlobalAiAssistant.css';
+
+// API KEYS
+const GNEWS_API_KEY = "ecc08c1ed5ec3a3e668a7e5e5bd99792";
+const NEWSAPI_KEY = "6990d1cc14354f439658e5dea2327782";
+
+const mapCategoryToGNews = (cat) => {
+  const mapping = {
+    "All News": "general", "Top Stories": "general", "World": "world",
+    "Trending": "nation", "Technology": "technology", "Business": "business",
+    "Finance": "business", "Sports": "sports", "Health": "health",
+    "Entertainment": "entertainment", "Science": "science"
+  };
+  return mapping[cat] || null;
+};
 
 const NewsApp = () => {
   const [search, setSearch] = useState("All News");
@@ -29,9 +43,6 @@ const NewsApp = () => {
     appLanguage: 'en'
   });
 
-  // API KEYS
-  const GNEWS_API_KEY = "ecc08c1ed5ec3a3e668a7e5e5bd99792";
-  const NEWSAPI_KEY = "6990d1cc14354f439658e5dea2327782";
 
   // Load bookmarks and settings
   useEffect(() => {
@@ -64,7 +75,7 @@ const NewsApp = () => {
     localStorage.setItem('newsBookmarks', JSON.stringify(updatedBookmarks));
   };
 
-  const getData = async (query) => {
+  const getData = useCallback(async (query) => {
     if (query === "Bookmarks") {
       setNewsData(bookmarks);
       setLoading(false);
@@ -109,21 +120,11 @@ const NewsApp = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const mapCategoryToGNews = (cat) => {
-    const mapping = {
-      "All News": "general", "Top Stories": "general", "World": "world",
-      "Trending": "nation", "Technology": "technology", "Business": "business",
-      "Finance": "business", "Sports": "sports", "Health": "health",
-      "Entertainment": "entertainment", "Science": "science"
-    };
-    return mapping[cat] || null;
-  };
+  }, [bookmarks]);
 
   useEffect(() => {
     getData("All News");
-  }, []);
+  }, [getData]);
 
   const handleSearch = async (forcedQuery = null) => {
     const query = forcedQuery || search.trim();
