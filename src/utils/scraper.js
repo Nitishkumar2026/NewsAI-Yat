@@ -4,12 +4,21 @@
  */
 export const extractFullContent = async (url) => {
     try {
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-        const response = await fetch(proxyUrl);
-        if (!response.ok) throw new Error("Proxy fetch failed");
+        // Primary Proxy: AllOrigins
+        let proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+        let response = await fetch(proxyUrl);
+        let html;
 
-        const data = await response.json();
-        const html = data.contents;
+        if (response.ok) {
+            const data = await response.json();
+            html = data.contents;
+        } else {
+            // Secondary Proxy: CORSProxy.io (Fallback)
+            proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+            response = await fetch(proxyUrl);
+            if (!response.ok) throw new Error("All proxies failed");
+            html = await response.text();
+        }
 
         // Basic extraction logic: 
         // 1. Create a dummy DOM to parse the string

@@ -32,6 +32,7 @@ const NewsApp = () => {
   const [showSidebar, setShowSidebar] = useState(false);
   const [showAiWidget, setShowAiWidget] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [isMobileSearchVisible, setIsMobileSearchVisible] = useState(false);
   // Settings modal state
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState({
@@ -117,6 +118,47 @@ const NewsApp = () => {
         throw new Error("No articles found");
       }
     } catch (newsApiError) {
+      console.warn("NewsAPI failed, trying fallbacks...", newsApiError);
+      
+      // FALLBACK 1: Saurav.tech Open API (Best for Production/Netlify)
+      try {
+        let sauravUrl = null;
+        const region = settings?.newsRegion === 'India' ? 'in' : settings?.newsRegion === 'US' ? 'us' : 'in'; // Default to India/US for better results
+        
+        // Map category to saurav.tech supported categories
+        const sauravCategories = ['business', 'entertainment', 'general', 'health', 'science', 'sports', 'technology'];
+        let category = 'general';
+        
+        if (query && query !== "All News" && query !== "Top Stories") {
+            const lowerQuery = query.toLowerCase();
+            if (sauravCategories.includes(lowerQuery)) {
+                category = lowerQuery;
+            } else if (lowerQuery === 'world') {
+                category = 'general';
+            } else if (lowerQuery === 'trending') {
+                category = 'general';
+            }
+        }
+
+        // Only use this fallback if we can map to a category or it's a general request
+        // It doesn't support free-text search well, so we use it mainly for category/feed views
+        if (apiQuery === "latest news" || sauravCategories.includes(category)) {
+             sauravUrl = `https://saurav.tech/NewsAPI/top-headlines/category/${category}/${region}.json`;
+             
+             const res = await fetch(sauravUrl);
+             if (res.ok) {
+                 const data = await res.json();
+                 if (data.articles && data.articles.length > 0) {
+                     setNewsData(data.articles);
+                     return; // Success!
+                 }
+             }
+        }
+      } catch (sauravError) {
+          console.warn("Saurav.tech fallback failed", sauravError);
+      }
+
+      // FALLBACK 2: GNews
       try {
         const gnewsCategory = mapCategoryToGNews(query || "All News");
         let url = `https://gnews.io/api/v4/top-headlines?category=${gnewsCategory || 'general'}&lang=en&max=50&apikey=${GNEWS_API_KEY}`;
@@ -203,7 +245,7 @@ const NewsApp = () => {
       <aside className={`sidebar ${showSidebar ? 'show' : ''}`}>
         <div className='logo-area'>
           <button className="close-sidebar-btn" onClick={() => setShowSidebar(false)}>✕</button>
-          <div className='logo-icon'>YAT</div>
+          <img className='logo-icon-img' src="/newsAI-logo.png" alt="NewsAI" onError={(e)=>{e.currentTarget.src='/yat-logo.svg';}} />
           <div className='logo-text'>
             <span>NewsAI</span>
             <small>BY YUBISAKI</small>
@@ -244,21 +286,23 @@ const NewsApp = () => {
       <main className='main-content'>
         <header className='top-bar'>
           <div className="mobile-menu-btn" onClick={() => setShowSidebar(true)}>☰</div>
-          <div className='search-container'>
-            <input
-              type='text'
-              placeholder='Search by Voice or Topic...'
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-            />
-            <button onClick={startVoiceSearch} className={`mic-btn ${isListening ? 'listening' : ''}`} title="Voice Search">
-              <MicIcon color={isListening ? "#ef4444" : "var(--text-secondary)"} />
-            </button>
-            <button onClick={() => handleSearch()} className="search-confirm-btn" title="Search">
-              <SearchIcon color="white" />
-            </button>
-          </div>
+          {!selectedArticle && (
+            <div className='search-container'>
+              <input
+                type='text'
+                placeholder='Search by Voice or Topic...'
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              />
+              <button onClick={startVoiceSearch} className={`mic-btn ${isListening ? 'listening' : ''}`} title="Voice Search">
+                <MicIcon color={isListening ? "#ef4444" : "var(--text-secondary)"} />
+              </button>
+              <button onClick={() => handleSearch()} className="search-confirm-btn" title="Search">
+                <SearchIcon color="white" />
+              </button>
+            </div>
+          )}
 
           <div className='top-actions'>
             <button className='action-btn' onClick={() => setShowSettings(true)}>⚙️</button>
@@ -374,7 +418,7 @@ const NewsApp = () => {
 
       {!showAiWidget && (
         <button className="ai-fab-branded" onClick={() => setShowAiWidget(true)} title="Ask YAT AI">
-          <img src="/yat-logo.png" alt="YAT AI" width="50" height="50" style={{ borderRadius: '50%' }} />
+          <img src="/yat-logo.svg" alt="YAT AI" width="50" height="50" style={{ borderRadius: '12px' }} />
         </button>
       )}
       {showAiWidget && <GlobalAiAssistant onClose={() => setShowAiWidget(false)} selectedArticle={selectedArticle} />}

@@ -188,7 +188,26 @@ const NewsDetail = ({ article, onBack, fontSize = 'medium', appLanguage = 'en' }
                             <>
                                 <p className="lead-text-premium">{article.description}</p>
                                 <div className="content-text-main reader-content">
-                                    {fullContent || article.content || "Fetching full content..."}
+                                    {fullContent ? (
+                                        fullContent
+                                    ) : article.content ? (
+                                        <>
+                                            {article.content.split('[')[0]}
+                                            <div className="read-more-wrapper">
+                                                <p>...Continue reading the full story</p>
+                                                <button className="primary-btn" onClick={() => window.open(article.url, '_blank')}>
+                                                    Read Full Article at {article.source?.name}
+                                                </button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="loading-content-msg">
+                                            <p>Unable to load full content directly.</p>
+                                            <button className="primary-btn" onClick={() => window.open(article.url, '_blank')}>
+                                                Open Original Article
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </>
                         )}
