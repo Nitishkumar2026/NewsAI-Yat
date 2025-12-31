@@ -3,7 +3,7 @@ import Card from './Card';
 import NewsDetail from './NewsDetail';
 import GlobalAiAssistant from './GlobalAiAssistant';
 import { semanticRerank } from '../utils/aiService';
-import { SearchIcon, MicIcon, YatAiLogo } from './Icons';
+import { SearchIcon, MicIcon } from './Icons';
 import './GlobalAiAssistant.css';
 
 // API KEYS
@@ -21,7 +21,7 @@ const mapCategoryToGNews = (cat) => {
 };
 
 const NewsApp = () => {
-  const [search, setSearch] = useState("All News");
+  const [search, setSearch] = useState("");
   const [newsData, setNewsData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -91,11 +91,24 @@ const NewsApp = () => {
     }
 
     try {
-      const response = await fetch(`https://newsapi.org/v2/everything?q=${apiQuery}&pageSize=50&sortBy=publishedAt&apiKey=${NEWSAPI_KEY}`);
+      let url;
+      const regionMap = { Global: null, India: 'in', US: 'us', UK: 'gb' };
+      const country = regionMap[settings?.newsRegion] ?? null;
+
+      if (apiQuery === "latest news") {
+        url = country
+          ? `https://newsapi.org/v2/top-headlines?country=${country}&pageSize=50&apiKey=${NEWSAPI_KEY}`
+          : `https://newsapi.org/v2/everything?q=latest%20news&pageSize=50&sortBy=publishedAt&language=en&apiKey=${NEWSAPI_KEY}`;
+      } else {
+        const encoded = encodeURIComponent(apiQuery);
+        url = `https://newsapi.org/v2/everything?q=${encoded}&pageSize=100&sortBy=relevancy&searchIn=title,description&language=en&apiKey=${NEWSAPI_KEY}`;
+      }
+
+      const response = await fetch(url);
       if (!response.ok) throw new Error(`NewsAPI Error: ${response.status}`);
       const jsonData = await response.json();
       const validArticles = jsonData.articles?.filter(article =>
-        article.title !== "[Removed]" && article.description !== "[Removed]" && article.urlToImage
+        article.title !== "[Removed]" && article.description !== "[Removed]"
       ) || [];
 
       if (validArticles.length > 0) {
@@ -106,9 +119,9 @@ const NewsApp = () => {
     } catch (newsApiError) {
       try {
         const gnewsCategory = mapCategoryToGNews(query || "All News");
-        let url = `https://gnews.io/api/v4/top-headlines?category=${gnewsCategory || 'general'}&lang=en&apikey=${GNEWS_API_KEY}`;
+        let url = `https://gnews.io/api/v4/top-headlines?category=${gnewsCategory || 'general'}&lang=en&max=50&apikey=${GNEWS_API_KEY}`;
         if (query && query !== "All News" && !gnewsCategory) {
-          url = `https://gnews.io/api/v4/search?q=${query}&lang=en&apikey=${GNEWS_API_KEY}`;
+          url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&lang=en&max=50&apikey=${GNEWS_API_KEY}`;
         }
         const response = await fetch(url);
         if (!response.ok) throw new Error(`GNews Error: ${response.status}`);
@@ -120,7 +133,7 @@ const NewsApp = () => {
     } finally {
       setLoading(false);
     }
-  }, [bookmarks]);
+  }, [bookmarks, settings]);
 
   useEffect(() => {
     getData("All News");
@@ -257,8 +270,8 @@ const NewsApp = () => {
           <div className='news-ticker'>
             <div className='ticker-label'>BREAKING</div>
             <div className='ticker-content'>
-              <div className='ticker-track'>
-                {newsData.slice(0, 8).map((item, index) => <span key={index} className='ticker-item'>• {item.title}</span>)}
+            <div className='ticker-track'>
+                {newsData.slice(0, 20).map((item, index) => <span key={index} className='ticker-item'>• {item.title}</span>)}
               </div>
             </div>
           </div>
@@ -359,7 +372,11 @@ const NewsApp = () => {
         </div>
       )}
 
-      {!showAiWidget && <button className="ai-fab-branded" onClick={() => setShowAiWidget(true)} title="Ask YAT AI"><YatAiLogo size={50} /></button>}
+      {!showAiWidget && (
+        <button className="ai-fab-branded" onClick={() => setShowAiWidget(true)} title="Ask YAT AI">
+          <img src="/yat-logo.png" alt="YAT AI" width="50" height="50" style={{ borderRadius: '50%' }} />
+        </button>
+      )}
       {showAiWidget && <GlobalAiAssistant onClose={() => setShowAiWidget(false)} selectedArticle={selectedArticle} />}
     </div>
   );

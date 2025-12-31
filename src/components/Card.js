@@ -29,8 +29,7 @@ const NewsItem = ({ item, isBookmarked, toggleBookmark, onArticleClick }) => {
         }
     };
 
-    // Helper to get image URL from GNews (image) or NewsAPI (urlToImage)
-    const imageUrl = item.image || item.urlToImage;
+    const imageUrl = item.image || item.urlToImage || 'https://placehold.co/600x400?text=News+Image';
 
     return (
         <div className='news-card'>
@@ -85,21 +84,15 @@ const Card = ({ data, bookmarks, toggleBookmark, onArticleClick }) => {
                 const uniqueKey = curItem.url || index;
                 const isBookmarked = bookmarks?.some(b => b.url === curItem.url);
 
-                // Skip if no image (optional, but requested in previous constraints)
-                const imageUrl = curItem.image || curItem.urlToImage;
-                if (!imageUrl) {
-                    return null;
-                } else {
-                    return (
-                        <NewsItem 
-                            key={uniqueKey} 
-                            item={curItem} 
-                            isBookmarked={isBookmarked}
-                            toggleBookmark={toggleBookmark}
-                            onArticleClick={onArticleClick}
-                        />
-                    );
-                }
+                return (
+                    <NewsItem 
+                        key={uniqueKey} 
+                        item={curItem} 
+                        isBookmarked={isBookmarked}
+                        toggleBookmark={toggleBookmark}
+                        onArticleClick={onArticleClick}
+                    />
+                );
             })}
         </>
     );
